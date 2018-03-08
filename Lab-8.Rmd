@@ -85,5 +85,11 @@ all_ppp <- ppp(spill_ppp$x, spill_ppp$y, window = tx_owin)
 
 ```
 
+## A kernel density plot for overlapping areas around plots
+Beware you must choose an appropriate bandwidth of the sigma parameter (which affects the size of the grid cells) so that it is meaningful in terms of the true spatial extent of the data. 
+```{r}
+plot(density(all_ppp, sigma = 0.4))
+```
+
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
