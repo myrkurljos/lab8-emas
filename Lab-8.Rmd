@@ -14,6 +14,7 @@ library(tidyverse)
 library(sf)
 library(spatstat)
 library(maptools)
+library(leaflet)
 ```
 
 ## Column graph of Texas oil spills 2010-2016
@@ -32,6 +33,22 @@ ggplot(df, aes(x=Year, y=Loss)) +
   geom_col()
 ```
 
+## Leaflet plot of spill locations in Texas in 2016
+```{r}
+df_loc <- oil_spills %>%
+  filter(`Accident State` == "TX" & `Accident Year` == 2016) %>%
+  select(Latitude, Longitude, `Net Loss (Barrels)`)
+
+colnames(df_loc) <- c("latitude","longitude", "net_loss")
+
+oil_sf <- st_as_sf(df_loc, coords = c("longitude", "latitude"), crs = 4326) # convert data into spatial features data
+
+# class(oil_sf) # now it's recognized as simple features data!
+
+leaflet(oil_sf) %>%
+  addTiles() %>%
+  addMarkers()
+```
 
 
 
