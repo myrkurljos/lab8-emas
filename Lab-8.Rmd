@@ -10,11 +10,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 ## Load the packages
 ```{r}
-library(tidyverse)
-library(sf)
-library(spatstat)
+library(tidyverse) # for ggplotting
+library(sf) # for reading in spatial shape file data
+library(spatstat) # for point pattern analysis
 library(maptools)
-library(leaflet)
+library(leaflet) # for making interactive (base) map plots
+library(tmap) # for tmap plot
 ```
 
 ## Column graph of Texas oil spills 2010-2016
@@ -51,26 +52,38 @@ leaflet(oil_sf) %>%
 ```
 
 
+## tmap plot with the Texas state shapefile
+```{r}
+states <- st_read(dsn = ".", layer = "states") # works because all files are in working directory. this reads in all files that begin 'states...'
 
+tex_border <- states %>%
+  filter(STATE_NAME == "Texas") %>%
+  st_transform(4326) # give crs (coordinate reference system) for epsg value. This should match coordinate system that base map is in. 
 
+st_crs(tex_border)
 
+plot(tex_border)
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+tm_shape(tex_border) + 
+  tm_polygons() +
+  tm_shape(oil_sf) +
+  tm_dots(size = 0.3)
 ```
 
-## Including Plots
+## Convert the data to spatial points patterns (combination of point data and the bounding window)
+```{r}
+spill_sp <- as(oil_sf, "Spatial")
 
-You can also embed plots, for example:
+spill_ppp <- as(spill_sp, "ppp") # convert to point pattern data
+class(spill_ppp)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+tx_sp <- as(tex_border, "Spatial")
+tx_owin <- as(tx_sp, "owin") #specifies texas border info as an Outer WINdow for point pattern analysis
+
+all_ppp <- ppp(spill_ppp$x, spill_ppp$y, window = tx_owin)
+# NB rejects any points in space that are not recognized as falling in the designated boundary window
+
 ```
+
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
