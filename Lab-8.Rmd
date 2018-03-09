@@ -16,6 +16,7 @@ library(spatstat) # for point pattern analysis
 library(maptools)
 library(leaflet) # for making interactive (base) map plots
 library(tmap) # for tmap plot
+library(coin)
 ```
 
 ## Column graph of Texas oil spills 2010-2016
@@ -91,5 +92,56 @@ Beware you must choose an appropriate bandwidth of the sigma parameter (which af
 plot(density(all_ppp, sigma = 0.4))
 ```
 
+## Quadrat test for spatial evenness
+Again beware that the quadrant size has a big effect on the result of this test!! 
+
+Significant p value means data are NOT evenly distributed
+H0 = data ARE evenly distributed. 
+```{r}
+oil_qt <- quadrat.test(all_ppp, nx = 5, ny = 5)
+oil_qt # The data are not spatially evenly distributed 
+# nx = sets # horizontal regions, and ny sets # vertical regions
+
+plot(all_ppp)
+plot(oil_qt, add = TRUE, cex = 0.4)
+```
+
+# G-Function for Nearest Neighbor Analysis
+We can calculate how many clusters have their nearest neighbor within lag distance r. 
+If data are clustered, nearest neighbor will be closer than expected (than 'csr'). 
+If data are evenly distributed, nearest neighbor will be farther than expected (random)
+
+With g function, you can consider how close points are to nearest neighbor. 
+You will need to do some data manipulation to determine what a meaningful r 'lag' value is. 
+
+```{r}
+r.lag <- seq(0,1, by = 0.01) # Creates a sequence from 0 to 1 by increments of 0.01
+
+# Simulate csr distribute based on a Poisson distribution for comparison
+oil_gfun <- envelope(all_ppp, fun = Gest, r = r.lag, nsim = 100)
+View(oil_gfun)
+
+ggplot(oil_gfun, aes(x= r, y= obs)) +
+  geom_line(color = "black") +
+  geom_line(aes(x = r, y = theo), color = "red")
+```
+Our data has a higher proportion of point pairs of nearest neighbors at shorter distances compared to CSR data. Meaning that on average, our data points have a closer neighbor than if data were truly randomly distributed. 
+
+Include r values up to the max distance between nearest neighbors. 
+
+## Nearest Neighbor using the L-function (Ripley's K, standardized)
+With L and K functions, you draw increasing bubbles around each point and see what density of neighbors is as bubble gets larger. 
+
+NB. These functions are MUCH more computationally intense!!
+```{r}
+r.lag.2 <- seq(0,4, by = 0.5) # this is a large increment chosen to speed up processing time
+
+oil_lfun <- envelope(all_ppp, fun = Lest, r = r.lag.2, nsim = 20, global = TRUE)
+
+ggplot(oil_lfun, aes(x = r.lag.2, y = obs)) +
+  geom_line(color = "black") +
+  geom_line(aes(x = r.lag.2, y = theo), color = "blue")
+```
+Both the L and G functions suggest that there tend to be observations that exist closer together than you'd expect with a random distribution (csr) -- ie CLUSTERED data. 
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
